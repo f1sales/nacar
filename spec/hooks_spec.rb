@@ -13,6 +13,8 @@ RSpec.describe F1SalesCustom::Hooks::Lead do
       source
     end
 
+    let(:switch_source) { described_class.switch_source(lead) }
+
     context 'when does not have store info' do
       let(:store_name) { 'av_marcio_123' }
       let(:lead) do
@@ -23,7 +25,7 @@ RSpec.describe F1SalesCustom::Hooks::Lead do
       end
 
       it 'returns source name with moto' do
-        expect(described_class.switch_source(lead)).to eq(source_name)
+        expect(switch_source).to eq(source_name)
       end
     end
 
@@ -37,7 +39,50 @@ RSpec.describe F1SalesCustom::Hooks::Lead do
       end
 
       it 'returns source name with moto' do
-        expect(described_class.switch_source(lead)).to eq("#{source_name} - #{store_name}")
+        expect(switch_source).to eq("#{source_name} - #{store_name}")
+      end
+    end
+  end
+
+  context 'when is from landing page' do
+    let(:lead) do
+      lead = OpenStruct.new
+      lead.source = source
+      lead.description = 'Loja: SAÚDE | Telefone do cliente: (11) 98501-3987 | Cpf do cliente: 387.341.732-01 | O Cliente aceita receber ofertas no E-mail? Sim'
+
+      lead
+    end
+
+    let(:source) do
+      source = OpenStruct.new
+      source.name = source_name
+
+      source
+    end
+
+    let(:source_name) { 'Landing Page Nacar' }
+
+    let(:switch_source) { described_class.switch_source(lead) }
+
+    context 'when lead is to Saúde Store' do
+      it 'return SAÚDE' do
+        expect(switch_source).to eq("#{source_name} - SAÚDE")
+      end
+    end
+
+    context 'when lead is to Santo Amaro Store' do
+      before { lead.description = 'Loja: SANTO AMARO | Telefone do cliente: (11) 96212-2785 | Cpf do cliente: 367.222.348-21 | O Cliente aceita receber ofertas no E-mail? Sim'}
+
+      it 'return SANTO AMARO' do
+        expect(switch_source).to eq("#{source_name} - SANTO AMARO")
+      end
+    end
+
+    context 'when lead is to Vila das Merces Store' do
+      before { lead.description = 'Loja: VILA DAS MERCES | Telefone do cliente: (11) 91234-0036 | Cpf do cliente: 000.904.498-01 | O Cliente aceita receber ofertas no E-mail? Sim'}
+
+      it 'return SANTO AMARO' do
+        expect(switch_source).to eq("#{source_name} - VILA DAS MERCES")
       end
     end
   end
